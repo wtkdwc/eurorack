@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Fill pattern editor</title>
+  <style>
+    .track { display: flex; margin-bottom: 10px; }
+    .step { width: 20px; height: 20px; border: 1px solid #333; margin: 2px; cursor: pointer; }
+    .active { background-color: #FF5722; }
+    .controls { display: flex; align-items: center; }
+    .random-checkbox { margin-left: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Fill pattern editor</h1>
+  
+  <div id="sequencer">
+    <!-- Create 8 patterns, each with 8 steps and a random checkbox -->
+    <div id="patterns">
+      <!-- JavaScript will populate these -->
+    </div>
+  </div>
+  
+  <button onclick="generateSequence()">Generate</button>
+  
+  <pre id="output"></pre> <!-- Display the generated pattern for saving -->
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.35/Tone.min.js"></script>
+  <script>
+    const patterns = [];
+    const stepsPerPattern = 8;
+    const patternCount = 8;
+
+    // Initialize the pattern grid and random checkboxes
+    const patternsContainer = document.getElementById("patterns");
+    for (let i = 0; i < patternCount; i++) {
+      const trackContainer = document.createElement('div');
+      trackContainer.className = 'track';
+      
+      const patternRow = [];
+      for (let j = 0; j < stepsPerPattern; j++) {
+        const step = document.createElement('div');
+        step.className = 'step';
+        step.onclick = () => toggleStep(i, j);
+        trackContainer.appendChild(step);
+        patternRow.push(step);
+      }
+      
+      // Add "Random" checkbox
+      const controls = document.createElement('div');
+      controls.className = 'controls';
+      const randomCheckbox = document.createElement('input');
+      randomCheckbox.type = 'checkbox';
+      randomCheckbox.className = 'random-checkbox';
+      randomCheckbox.id = `random-${i}`;
+      controls.appendChild(randomCheckbox);
+      
+      const label = document.createElement('label');
+      label.htmlFor = `random-${i}`;
+      label.innerText = 'Random';
+      controls.appendChild(label);
+      
+      trackContainer.appendChild(controls);
+      patternsContainer.appendChild(trackContainer);
+      patterns.push({ steps: patternRow, random: randomCheckbox });
+    }
+
+    // Toggle step activation
+    function toggleStep(patternIndex, stepIndex) {
+      patterns[patternIndex].steps[stepIndex].classList.toggle('active');
+    }
+
+    // Generate sequence output
+    function generateSequence() {
+      const patternData = patterns.map(({ steps, random }) => {
+        if (random.checked) {
+          // If random is checked, activate random steps
+          steps.forEach(step => step.classList.remove('active')); // Reset
+          for (let i = 0; i < stepsPerPattern; i++) {
+            if (Math.random() > 0.5) steps[i].classList.add('active');
+          }
+        }
+        
+        // Create pattern array with 1 for active steps and 0 for inactive
+        return steps.map(step => step.classList.contains('active') ? 1 : 0);
+      });
+      
+      // Display the output as JSON (or can be customized to match C array format)
+      const output = JSON.stringify(patternData);
+      document.getElementById("output").innerText = output;
+      
+      // For C code, format as an array of arrays (you can copy this and paste in C code)
+      const cFormattedPattern = patternData.map(pattern => `{ ${pattern.join(', ')} }`).join(',\n');
+      console.log(`Pattern Data for C:\n{ ${cFormattedPattern} }`);
+    }
+  </script>
+</body>
+</html>
